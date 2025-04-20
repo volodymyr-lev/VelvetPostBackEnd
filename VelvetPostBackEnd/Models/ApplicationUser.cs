@@ -30,6 +30,9 @@ public class Client
     public string Email { get; set; }
 
     [StringLength(100)]
+    public string City { get; set; }
+
+    [StringLength(100)]
     public string Address { get; set; }
 
     // Зв'язок з Identity (опціонально)

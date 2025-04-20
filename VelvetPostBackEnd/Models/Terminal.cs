@@ -15,8 +15,8 @@ public class Terminal
 
     [Required]
     [StringLength(100)]
-    public string Region { get; set; }
-
+    public string City { get; set; }
+    
     [Required]
     public string Type { get; set; }
 

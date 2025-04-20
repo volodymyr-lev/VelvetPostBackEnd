@@ -71,7 +71,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(t => t.Id);
             entity.Property(t => t.Name).IsRequired().HasMaxLength(100);
             entity.Property(t => t.Address).IsRequired().HasMaxLength(255);
-            entity.Property(t => t.Region).IsRequired().HasMaxLength(100);
+            entity.Property(t => t.City).IsRequired().HasMaxLength(100);
             entity.Property(t => t.Type).IsRequired();
         });
 

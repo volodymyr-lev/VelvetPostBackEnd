@@ -38,7 +38,7 @@ namespace VelvetPostBackEnd
                     EmailConfirmed = true,
                     PhoneNumber = "+380501234567",
                     PhoneNumberConfirmed = true,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 var result = await userManager.CreateAsync(adminUser, "Admin123!");
@@ -57,7 +57,8 @@ namespace VelvetPostBackEnd
                 {
                     Name = "Центральний термінал",
                     Address = "вул. Центральна, 1",
-                    Region = "Київ",
+                    
+                    = "Київ",
                     Type = "Основний"
                 };
 
@@ -85,7 +86,7 @@ namespace VelvetPostBackEnd
                     Position = "Оператор",
                     PhoneNumber = "+380661234567",
                     Email = "operator@velvetpost.com",
-                    StartDate = DateTime.Now.AddMonths(-3)
+                    StartDate = DateTime.UtcNow.AddMonths(-3)
                 };
 
                 context.Employees.Add(employee);
@@ -109,7 +110,7 @@ namespace VelvetPostBackEnd
                     EmailConfirmed = true,
                     PhoneNumber = employee.PhoneNumber,
                     PhoneNumberConfirmed = true,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 var employeeResult = await userManager.CreateAsync(employeeUser, "Employee123!");
