@@ -40,4 +40,8 @@ public class PostOfficesController : ControllerBase
             return StatusCode(500, $"Cталася помилка при отриманні відділень {ex.Message}");
         }
     }
+
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdatePostOffice(int id, [FromBody] PostOffice Up)
 }

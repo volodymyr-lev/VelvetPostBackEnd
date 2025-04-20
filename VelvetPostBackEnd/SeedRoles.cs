@@ -58,7 +58,7 @@ namespace VelvetPostBackEnd
                     Name = "Центральний термінал",
                     Address = "вул. Центральна, 1",
                     
-                    = "Київ",
+                    City = "Київ",
                     Type = "Основний"
                 };
 

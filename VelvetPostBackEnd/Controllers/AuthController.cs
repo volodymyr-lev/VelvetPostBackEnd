@@ -131,6 +131,14 @@ public class AuthController : ControllerBase
                             TerminalId = user.Employee.TerminalEmployee?.TerminalId
                         };
                     }
+                    else if(roles.FirstOrDefault() == "Admin")
+                    {
+                        profile = new
+                        {
+                            Id = user.Id,
+                            Email = user.Email
+                        };
+                    }
 
                     return Ok(new
                     {
