@@ -161,7 +161,7 @@ public class AuthController : ControllerBase
 
 
     // JWT generation fucntion
-    public async Task<string> GenerateJWTToken(ApplicationUser user)
+    private async Task<string> GenerateJWTToken(ApplicationUser user)
     {
         var roles = await _userManager.GetRolesAsync(user);
 

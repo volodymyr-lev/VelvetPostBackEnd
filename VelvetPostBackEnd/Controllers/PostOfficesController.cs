@@ -28,7 +28,7 @@ public class PostOfficesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    [Authorize(Roles = "Admin,PostOfficeEmployee")]
     public async Task<IActionResult> GetPostOffices()
     {
         try
