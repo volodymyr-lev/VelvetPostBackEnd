@@ -27,7 +27,6 @@ public class PostOfficeEmployeesController : ControllerBase
         _context = context;
     }
 
-    
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetPostOfficeEmployees()
@@ -35,8 +34,8 @@ public class PostOfficeEmployeesController : ControllerBase
         try
         {
             var postOfficeEmployees = await _context.PostOfficeEmployees.
-                Include(e=>e.Employee)
-                .Include(po=>po.PostOffice)
+                Include(e => e.Employee)
+                .Include(po => po.PostOffice)
                 .ToListAsync();
 
             var result = postOfficeEmployees.Select(poe => new
@@ -72,5 +71,54 @@ public class PostOfficeEmployeesController : ControllerBase
         {
             return StatusCode(500, $"Cталася помилка при отриманні співробітників відділення {ex.Message}");
         }
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddPostOfficeEmployee([FromBody] CreateEmpoyeeDTO employee)
+    {
+        if (ModelState.IsValid)
+        {
+            var user = new ApplicationUser
+            {
+                UserName = employee.Email,
+                Email = employee.Email,
+                PhoneNumber = employee.PhoneNumber,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(user, employee.Password);
+            if (result.Succeeded)
+            {
+                var newEmployee = new Employee
+                {
+                    FirstName = employee.FirstName,
+                    LastName = employee.LastName,
+                    Position = employee.Position,
+                    PhoneNumber = employee.PhoneNumber,
+                    Email = employee.Email,
+                    StartDate = DateTime.UtcNow,
+                    ApplicationUserId = user.Id
+                };
+                await _context.Employees.AddAsync(newEmployee);
+                await _context.SaveChangesAsync();
+                var postOfficeEmployee = new PostOfficeEmployee
+                {
+                    EmployeeId = newEmployee.Id,
+                    PostOfficeId = employee.DepId
+                };
+                await _context.PostOfficeEmployees.AddAsync(postOfficeEmployee);
+                await _context.SaveChangesAsync();
+                await _userManager.AddToRoleAsync(user, "PostOfficeEmployee");
+            }
+            else
+            {
+                return BadRequest("User creation failed");
+            }
+            
+            return Ok("PostOfficeEmployee added successfully");
+        }
+
+        return BadRequest("Invalid model state.");
     }
 }

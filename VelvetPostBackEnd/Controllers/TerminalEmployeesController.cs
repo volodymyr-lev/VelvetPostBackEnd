@@ -64,11 +64,59 @@ public class TerminalEmployeesController : ControllerBase
                     Type = te.Terminal.Type
                 }
             }).ToList();
-            return Ok(terminalEmployees);
+            return Ok(result);
         }
         catch (Exception ex)
         {
             return StatusCode(500, $"Cталася помилка при отриманні співробітників відділення {ex.Message}");
         }
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddTerminalEmployee([FromBody] CreateEmpoyeeDTO employee)
+    {
+        if (ModelState.IsValid)
+        {
+            var user = new ApplicationUser
+            {
+                UserName = employee.Email,
+                Email = employee.Email,
+                PhoneNumber = employee.PhoneNumber,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(user, employee.Password);
+            if (result.Succeeded)
+            {
+                var newEmployee = new Employee
+                {
+                    FirstName = employee.FirstName,
+                    LastName = employee.LastName,
+                    Position = employee.Position,
+                    PhoneNumber = employee.PhoneNumber,
+                    Email = employee.Email,
+                    StartDate = DateTime.UtcNow,
+                    ApplicationUserId = user.Id
+                };
+
+                await _context.Employees.AddAsync(newEmployee);
+                await _context.SaveChangesAsync();
+                var terminalEmployee = new TerminalEmployee
+                {
+                    EmployeeId = newEmployee.Id,
+                    TerminalId = employee.DepId
+                };
+                await _context.TerminalEmployees.AddAsync(terminalEmployee);
+                await _context.SaveChangesAsync();
+                await _userManager.AddToRoleAsync(user, "TerminalEmployee");
+                return Ok("TerminalEmployee added successfully");
+            }
+            else
+            {
+                return BadRequest("User creation failed");
+            }
+        }
+        return BadRequest("Invalid model state.");
     }
 }
