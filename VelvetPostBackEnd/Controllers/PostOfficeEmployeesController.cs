@@ -121,4 +121,76 @@ public class PostOfficeEmployeesController : ControllerBase
 
         return BadRequest("Invalid model state.");
     }
+
+
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateEmployee(int id, [FromBody] UpdateEmployeeDTO updateData)
+    {
+        Console.WriteLine($"name {updateData.FirstName} {updateData.LastName}\n" +
+                          $"email {updateData.Email} pn {updateData.PhoneNumber}\n"+
+                          $"position {updateData.Position} depId {updateData.DepId}");
+
+
+        var employee = await _context.Employees
+                .Include(e => e.PostOfficeEmployee)
+                .Include(e => e.ApplicationUser)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (employee == null)
+        {
+            return NotFound("Couldn't find employee or department");
+        }
+
+        try
+        {
+            // update employee data
+            employee.FirstName = updateData.FirstName;
+            employee.LastName = updateData.LastName;
+            employee.Email = updateData.Email;
+            employee.PhoneNumber = updateData.PhoneNumber;
+            employee.Position = updateData.Position;
+            employee.PostOfficeEmployee.PostOfficeId = updateData.DepId;
+
+            // update ApplicationUser data
+            employee.ApplicationUser.UserName = updateData.Email;
+            employee.ApplicationUser.Email = updateData.Email;
+            employee.ApplicationUser.PhoneNumber = updateData.PhoneNumber;
+
+            await _context.SaveChangesAsync();
+            return Ok("Employee updated successfully");
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "Concurrency error occurred while updating the employee.");
+        }
+    }
+
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteEmployee(int id)
+    {
+        var employee = await _context.Employees.Include(e => e.PostOfficeEmployee)
+                                               .Include(e => e.ApplicationUser)
+                                               .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (employee == null)
+        {
+            return NotFound("Couldn't find employee or department");
+        }
+
+        try
+        {
+            // remove employye from employees, postoffice employees and AppUser
+            _context.Employees.Remove(employee);
+            _context.PostOfficeEmployees.Remove(employee.PostOfficeEmployee);
+            await _userManager.DeleteAsync(employee.ApplicationUser);
+            return Ok("Employee deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error occurred while deleting the employee: {ex.Message}");
+        }
+    }
 }

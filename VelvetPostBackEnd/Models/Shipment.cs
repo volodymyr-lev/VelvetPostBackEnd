@@ -4,6 +4,7 @@ namespace VelvetPostBackEnd.Models;
 public class Shipment
 {
     public int Id { get; set; }
+    public double Price { get; set; }
 
     // Зовнішні ключі
     public int SenderId { get; set; }
