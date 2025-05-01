@@ -34,6 +34,10 @@ public class ShipmentsController : ControllerBase
         {
             var shipment = await _context.Shipments
                                          .Include(s => s.Parcel)
+                                         .Include(s=>s.Sender)
+                                         .Include(s=>s.Receiver)
+                                         .Include(s=>s.FromPostOffice)
+                                         .Include(s=> s.ToPostOffice)
                                          .FirstAsync(s => s.Id == id);
 
             if(shipment == null)
@@ -45,22 +49,26 @@ public class ShipmentsController : ControllerBase
             {
                 Id = shipment.Id,
                 SenderId = shipment.SenderId,
+                SenderName = shipment.Sender.FirstName + " " + shipment.Sender.LastName,
                 ReceiverId = shipment.ReceiverId,
+                ReceiverName = shipment.Receiver.FirstName + " " + shipment.Receiver.LastName,
                 FromPostOfficeId = shipment.FromPostOfficeId,
+                FromPostOfficeName = shipment.FromPostOffice.Name,
                 ToPostOfficeId = shipment.ToPostOfficeId,
+                ToPostOfficeName = shipment.ToPostOffice.Name,
                 CreatedAt = shipment.CreatedAt,
                 DeliveredAt = shipment.DeliveredAt,
                 Status = shipment.Status,
-                Parcel = new ParcelDTO
+                Parcel = (shipment.Parcel != null) ? new ParcelDTO
                 {
                     Id = shipment.Parcel.Id,
                     Weight = shipment.Parcel.Weight,
                     Type = shipment.Parcel.Type,
-                },
+                } : null,
                 Price = shipment.Price,
             };
 
-            return Ok(shipment);
+            return Ok(result);
         }
         catch (Exception ex)
         {
