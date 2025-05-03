@@ -29,13 +29,13 @@ public class ClientsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetClient(int id)
     {
-        var client = await _context.Clients.Include(c=>c.ApplicationUser)
-                                           .FirstOrDefaultAsync(c=>c.Id == id);
+        var client = await _context.Clients.Include(c => c.ApplicationUser)
+                                           .FirstOrDefaultAsync(c => c.Id == id);
         if (client == null)
         {
             return NotFound("Client with this Id was not found");
         }
-        
+
         var shipments = await _context.Shipments
                         .Where(s => s.ReceiverId == id || s.SenderId == id)
                         .ToListAsync();
@@ -62,6 +62,7 @@ public class ClientsController : ControllerBase
                 DeliveredAt = s.DeliveredAt,
                 Status = s.Status,
                 Price = s.Price,
+                ParcelId = s.ParcelId,
             }).ToList()
         });
     }
@@ -107,4 +108,69 @@ public class ClientsController : ControllerBase
         });
     }
 
+    [HttpGet("by-phone/{phoneNumber}")]
+    public async Task<IActionResult> GetClientByPhone(string phoneNumber)
+    {
+        var client = await _context.Clients
+            .Include(c => c.ApplicationUser)
+            .FirstOrDefaultAsync(c => c.PhoneNumber == phoneNumber);
+        if (client == null)
+        {
+            return NotFound("Client with this phone number was not found");
+        }
+        var shipments = await _context.Shipments
+            .Where(s => s.ReceiverId == client.Id || s.SenderId == client.Id)
+            .ToListAsync();
+        return Ok(new GetClientDTO
+        {
+            Id = client.Id,
+            FirstName = client.FirstName,
+            LastName = client.LastName,
+            Email = client.Email,
+            PhoneNumber = client.PhoneNumber,
+            City = client.City,
+            Address = client.Address,
+            CreationDate = client.ApplicationUser.CreatedAt,
+            Shipments = shipments.Select(s => new ClientShipmentDTO
+            {
+                Id = s.Id,
+                SenderId = s.SenderId,
+                ReceiverId = s.ReceiverId,
+                FromPostOfficeId = s.FromPostOfficeId,
+                ToPostOfficeId = s.ToPostOfficeId,
+                CreatedAt = s.CreatedAt,
+                DeliveredAt = s.DeliveredAt,
+                Status = s.Status,
+                Price = s.Price,
+            }).ToList()
+        });
+    }
+
+    [HttpPost("client-create-shipment")]
+    public async Task<IActionResult> ClientCreateShipment([FromBody] ClientCreateShipmentDTO clientCreateShipmentDTO)
+    {
+        try
+        {
+            var newShipment = new Shipment
+            {
+                SenderId = clientCreateShipmentDTO.SenderId,
+                ReceiverId = clientCreateShipmentDTO.ReceiverId,
+                FromPostOfficeId = clientCreateShipmentDTO.FromPostOfficeId,
+                ToPostOfficeId = clientCreateShipmentDTO.ToPostOfficeId,
+                Price = 75.00,
+                CreatedAt = DateTime.UtcNow,
+                Status = "Очікує пакунок",
+                ParcelId = null,
+            };
+
+            var result = await _context.Shipments.AddAsync(newShipment);
+            await _context.SaveChangesAsync();
+            return Ok($"Відправлення {result.Entity.Id} створено.");
+
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }

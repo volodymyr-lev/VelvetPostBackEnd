@@ -41,6 +41,24 @@ public class PostOfficesController : ControllerBase
             return StatusCode(500, $"Cталася помилка при отриманні відділень {ex.Message}");
         }
     }
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin,PostOfficeEmployee,Client")]
+    public async Task<IActionResult> GetPostOffices(int id)
+    {
+        try
+        {
+            var postOffice = await _context.PostOffices.FindAsync(id);
+            if (postOffice == null)
+            {
+                return NotFound("Відділення не знайдено");
+            }
+            return Ok(postOffice);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Cталася помилка при отриманні відділень {ex.Message}");
+        }
+    }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
