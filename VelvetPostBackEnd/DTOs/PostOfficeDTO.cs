@@ -1,4 +1,6 @@
-﻿namespace VelvetPostBackEnd.DTOs;
+﻿using VelvetPostBackEnd.Models;
+
+namespace VelvetPostBackEnd.DTOs;
 
 
 public class PostOfficeDTO
@@ -8,5 +10,9 @@ public class PostOfficeDTO
     public string Address {  get; set; }
     public string City { get; set; }
     public string PhoneNumber { get; set; }
-    public int TerminalId { get; set; }
+    public int? TerminalId { get; set; }
+
+    public int? EmployeeCount { get; set; }
+    public int? OutgoingShipmentsCount { get; set; }
+    public int? IncomingShipmentsCount { get; set; }
 }

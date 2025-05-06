@@ -41,6 +41,30 @@ public class TerminalsController : ControllerBase
         }
     }
 
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin, TerminalEmployee")]
+    public async Task<IActionResult> GetTerminalById(int id)
+    {
+        try
+        {
+            var terminal = await _context.Terminals.FindAsync(id);
+
+            var result = new TerminalDTO
+            {
+                Id = terminal.Id,
+                City = terminal.City,
+                Name = terminal.Name,
+                Address = terminal.Address,
+                Type = terminal.Type
+            };
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateTerminal(int id, [FromBody] TerminalDTO updatedTerminal)

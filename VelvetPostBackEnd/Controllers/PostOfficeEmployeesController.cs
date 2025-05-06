@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using VelvetPostBackEnd.Data;
 using VelvetPostBackEnd.DTOs;
 using VelvetPostBackEnd.Models;
@@ -122,6 +123,57 @@ public class PostOfficeEmployeesController : ControllerBase
         return BadRequest("Invalid model state.");
     }
 
+    [HttpPost("CreateShipmentWithParcel")]
+    [Authorize(Roles = "PostOfficeEmployee")]
+    public async Task<IActionResult> CreateShipmentWithParcel([FromBody] CreateShipmentWithParcelDTO createShipmentWithParcelDTO)
+    {
+        if (ModelState.IsValid)
+        {
+            var sender = await _context.Clients.FirstOrDefaultAsync(c => c.PhoneNumber == createShipmentWithParcelDTO.SenderPhone);
+            if (sender == null)
+            {
+                return BadRequest("Відправляча не знайдено");
+            }
+
+            var reciver = await _context.Clients.FirstOrDefaultAsync(c=>c.PhoneNumber == createShipmentWithParcelDTO.RecipientPhone);
+            if(reciver == null)
+            {
+                return BadRequest("Отримувача не знайдено");
+            }
+
+            if(createShipmentWithParcelDTO.Weight > 500)
+            {
+                return BadRequest("Вага посилки не може перевищувати 500 кілограмів");
+            }
+
+            var parcel = new Parcel
+            {
+                Type = createShipmentWithParcelDTO.Type,
+                Weight = createShipmentWithParcelDTO.Weight
+            };
+
+            _context.Parcels.Add(parcel);
+            await _context.SaveChangesAsync();
+
+            var shipment = new Shipment
+            {
+                Price = createShipmentWithParcelDTO.Price,
+                SenderId = sender.Id,
+                ReceiverId = reciver.Id,
+                FromPostOfficeId = createShipmentWithParcelDTO.FromOffice,
+                ToPostOfficeId = createShipmentWithParcelDTO.ToOffice,
+                ParcelId = parcel.Id,
+                CreatedAt = DateTime.UtcNow,
+                Status = "Очікує відправки"
+            };
+
+            _context.Shipments.Add(shipment);
+            await _context.SaveChangesAsync();
+
+            return Ok("Відправлення створено");
+        }
+        return BadRequest("Invalid model state");
+    }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]

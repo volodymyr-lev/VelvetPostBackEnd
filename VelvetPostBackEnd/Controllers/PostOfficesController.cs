@@ -52,11 +52,81 @@ public class PostOfficesController : ControllerBase
             {
                 return NotFound("Відділення не знайдено");
             }
-            return Ok(postOffice);
+            int? inCount = _context.Shipments.Count(s => (s.ToPostOfficeId == id && s.Status != "Доставлено"));
+            int? outCount = _context.Shipments.Count(s => (s.FromPostOfficeId == id && s.Status != "Доставлено"));
+            return Ok(new PostOfficeDTO
+            {
+                Id = postOffice.Id,
+                Name = postOffice.Name,
+                Address = postOffice.Address,
+                City = postOffice.City,
+                PhoneNumber = postOffice.PhoneNumber,
+                TerminalId = postOffice.TerminalId,
+                EmployeeCount = _context.PostOfficeEmployees.Count(e => e.PostOfficeId == id),
+                IncomingShipmentsCount = inCount,
+                OutgoingShipmentsCount = outCount
+
+            });
         }
         catch (Exception ex)
         {
             return StatusCode(500, $"Cталася помилка при отриманні відділень {ex.Message}");
+        }
+    }
+
+    [HttpGet("{id}/shipments")]
+    [Authorize(Roles = "Admin,PostOfficeEmployee")]
+    public async Task<IActionResult> GetPostOfficeShipments(int id)
+    {
+        try
+        {
+            var po = await _context.PostOffices.FindAsync(id);
+
+            if (po == null)
+            {
+                return NotFound("Відділення не знайдено");
+            }
+
+            var shipments = await _context.Shipments
+                .Where(s => s.ToPostOfficeId == id)
+                .Include(s=>s.FromPostOffice)
+                .Include(s=>s.ToPostOffice)
+                .Include(s => s.Parcel)
+                .Include(s => s.Sender)
+                .Include(s => s.Receiver)
+                .ToListAsync();
+
+            var result = shipments.Select(s => new GetShipmentDTO
+            {
+                Id = s.Id,
+                SenderId = s.SenderId,
+                SenderName = s.Sender.FirstName + " " + s.Sender.LastName,
+                SenderAddress = s.Sender.Address,
+                ReceiverId = s.ReceiverId,
+                ReceiverName = s.Receiver.FirstName + " " + s.Receiver.LastName,
+                ReceiverAddress = s.Receiver.Address,
+                FromPostOfficeId = s.FromPostOfficeId,
+                FromPostOfficeName = s.FromPostOffice.Name,
+                ToPostOfficeId = s.ToPostOfficeId,
+                ToPostOfficeName = s.ToPostOffice.Name,
+                CreatedAt = s.CreatedAt,
+                DeliveredAt = s.DeliveredAt,
+                Status = s.Status,
+                Parcel = (s.Parcel != null) ? new ParcelDTO
+                {
+                    Id = s.Parcel.Id,
+                    Weight = s.Parcel.Weight,
+                    Type = s.Parcel.Type,
+                } : null,
+                Price = s.Price
+            }).ToList();
+
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Cталася помилка при отриманні відправлень з відділення {ex.Message}");
         }
     }
 
@@ -136,3 +206,7 @@ public class PostOfficesController : ControllerBase
         return BadRequest("Спробуйте пізніше");
     }
 }
+
+
+
+

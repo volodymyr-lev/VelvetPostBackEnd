@@ -5,8 +5,10 @@ public class GetShipmentDTO
     public int Id { get; set; }
     public int SenderId { get; set; }
     public string? SenderName { get; set; }
+    public string? SenderAddress { get; set; }
     public int ReceiverId { get; set; }
     public string? ReceiverName { get; set; }
+    public string? ReceiverAddress { get; set; }
     public int FromPostOfficeId { get; set; }
     public string? FromPostOfficeName { get; set; }
     public int ToPostOfficeId { get; set; }

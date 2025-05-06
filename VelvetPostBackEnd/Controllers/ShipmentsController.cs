@@ -137,9 +137,37 @@ public class ShipmentsController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpPut("{id}/status")]
+    [Authorize(Roles ="PostOfficeEmployee,Admin")]
+    public async Task<IActionResult> ChangeShipmentStatus(int id, [FromBody] ChangeShipmentStatusDTO StatusDTO)
+    {
+        try
+        {
+            var shipment = await _context.Shipments.FindAsync(id);
+            if (shipment == null)
+            {
+                return BadRequest($"Відпарвлення {id} не знайдено");
+            }
+
+            shipment.Status = StatusDTO.Status;
+
+            if(StatusDTO.Status == "Доставлено")
+            {
+                shipment.DeliveredAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok("Статус змінено");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }
 
-    public class EditShipmentDTO
+public class EditShipmentDTO
 {
     public int SenderId { get; set; }
     public int ReceiverId { get; set; }
