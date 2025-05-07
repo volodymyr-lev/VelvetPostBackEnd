@@ -56,7 +56,14 @@ namespace VelvetPostBackEnd.Controllers
             };
 
             var endDate = DateTime.UtcNow;
-            var startDate = endDate.AddDays(-7);
+
+            var firstShipmentDate = await _context.Shipments
+                .Where(s => s.FromPostOffice.TerminalId == id || s.ToPostOffice.TerminalId == id)
+                .OrderBy(s => s.CreatedAt)
+                .Select(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            var startDate = firstShipmentDate;
 
             var shipments = await _context.Shipments
                 .Include(s => s.Parcel)
@@ -68,7 +75,7 @@ namespace VelvetPostBackEnd.Controllers
                     (s.FromPostOffice.TerminalId == id || s.ToPostOffice.TerminalId == id))
                 .ToListAsync();
 
-            var shipmentData = Enumerable.Range(0, 7)
+            var shipmentData = Enumerable.Range(0, (endDate - startDate).Days)
                 .Select(i => startDate.AddDays(i).Date)
                 .Select(date => new ShipmentDataDTO
                 {
@@ -98,7 +105,6 @@ namespace VelvetPostBackEnd.Controllers
                 new TerminalShipmentTypeDTO { Name = "Посилка", Value = parcels.Count(p => p.Type == "Посилка") },
             };
 
-
             var statusData = new List<StatusDataDTO>
             {
                 new StatusDataDTO { Name = "Очікує відправки", Value = shipments.Count(s => s.Status == "Очікує відправки") },
@@ -109,13 +115,13 @@ namespace VelvetPostBackEnd.Controllers
 
             var timeDistribution = GenerateTimeDistribution(shipments, id);
 
-            var deliveryTargets = GenerateDeliveryTargets(shipments, id);
+            var deliveryTargets = await GenerateDeliveryTargets(shipments, id);
 
             var parcelAnalysis = parcels.Select(p => new ParcelAnalysisDTO
             {
                 Id = p.Id,
                 Weight = (double)p.Weight,
-                Price = shipments.FirstOrDefault(s=>s.ParcelId == p.Id).Price,
+                Price = shipments.FirstOrDefault(s => s.ParcelId == p.Id).Price,
                 Type = shipments.FirstOrDefault(s => s.ParcelId == p.Id).Parcel.Type,
             }).ToList();
 
@@ -127,11 +133,12 @@ namespace VelvetPostBackEnd.Controllers
                 StatusData = statusData,
                 TimeDistribution = timeDistribution,
                 DeliveryTargets = deliveryTargets,
-                ParcelAnalysis = parcelAnalysis
+                ParcelAnalysis = parcelAnalysis.OrderBy(p => p.Price).ToList()
             };
 
             return response;
         }
+
 
         #region Допоміжні методи
 
@@ -174,17 +181,27 @@ namespace VelvetPostBackEnd.Controllers
             return result;
         }
 
-        private List<DeliveryTargetDTO> GenerateDeliveryTargets(List<Shipment> shipments, int terminalId)
+        private async Task<List<DeliveryTargetDTO>> GenerateDeliveryTargets(List<Shipment> shipments, int terminalId)
         {
             var endDate = DateTime.UtcNow;
-            var startDate = endDate.AddDays(-7);
+
+            var firstShipmentDate = await _context.Shipments
+                .Where(s => s.FromPostOffice.TerminalId == terminalId || s.ToPostOffice.TerminalId == terminalId)
+                .OrderBy(s => s.CreatedAt)
+                .Select(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            var startDate = firstShipmentDate;
+
             var result = new List<DeliveryTargetDTO>();
 
-            for (int i = 0; i < 7; i++)
+            var totalDays = (endDate - startDate).Days;
+
+            for (int i = 0; i <= totalDays; i++)
             {
                 var date = startDate.AddDays(i).Date;
 
-                var planned = 100;
+                var planned = 5;
 
                 var actual = shipments.Count(s =>
                     s.CreatedAt.Date == date &&

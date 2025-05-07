@@ -12,6 +12,9 @@ using VelvetPostBackEnd.Models;
 using Serilog;
 using Microsoft.OpenApi.Models;
 
+using VelvetPostBackEnd.Extensions;
+using VelvetPostBackEnd.Seeders;
+
 namespace VelvetPostBackEnd
 {
     public class Program
@@ -107,6 +110,18 @@ namespace VelvetPostBackEnd
             });
             builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 
+            builder.Services.AddControllers()
+                .AddNewtonsoftJson(options =>
+                {
+                    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                    options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                    options.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
+                });
+
+
+            builder.Services.AddDatabaseSeeder();
+
+
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
@@ -122,6 +137,11 @@ namespace VelvetPostBackEnd
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+
+                if (args.Contains("--seed"))
+                {
+                    await app.Services.SeedDatabaseAsync();
+                }
             }
 
             app.UseSerilogRequestLogging();
